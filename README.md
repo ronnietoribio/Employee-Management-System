@@ -106,21 +106,19 @@ Visit `http://127.0.0.1:8000` in your browser and login with your superuser cred
 
 ## 📱 Key Features Screenshots
 
-### Dashboard
-![Dashboard](screenshots/dashboard.png)
-- Overview of employee statistics
-- Quick access to common actions
+### List view with search
+![List View](screenshots/list-view.jpg)
 
-### Employee Management
-![Employee List](screenshots/employee-list.png)
-- Interactive employee table with search and filters
-- Quick actions for edit and delete
+### Add Form
+![Add Form](screenshots/add-form.jpg)
 
-### Profile Management
-![Profile Management](screenshots/update-employee.jpg)
-- Comprehensive employee profile editing
-- Photo upload and preview
+### Edit Form
+![Edit Form](screenshots/update-employee.jpg)
 
+### Delete Confirmation
+![Delete Confirmation](screenshots/delete-confirmation.jpg)
+
+### Other Features
 ![Dashboard](screenshots/dashboard-section.jpg)
 ![Login Page](screenshots/login-form.jpg)
 ![Logout](screenshots/logout.jpg)
