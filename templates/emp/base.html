@@ -1,0 +1,714 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Add cache control meta tags -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>{% block title %}{{ company_name }} - EMS{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"
+          rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi"
+          crossorigin="anonymous">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+      :root {
+        --primary-color: {{ theme_primary_color }};
+        --secondary-color: {{ theme_secondary_color }};
+        --text-color: {{ theme_text_color }};
+        --border-radius: {{ theme_border_radius }};
+        --font-size-base: {{ theme_font_size.base }};
+        --font-size-heading: {{ theme_font_size.heading }};
+        --font-size-input: {{ theme_font_size.input }};
+        --sidebar-width: 250px;
+        --sidebar-bg: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        --menu-hover-bg: rgba(255, 255, 255, 0.1);
+        --menu-active-bg: rgba(255, 255, 255, 0.2);
+      }
+
+      body {
+        font-size: var(--font-size-base);
+        color: var(--text-color);
+        overflow-x: hidden;
+        background-color: #f8f9fa;
+        padding: 0;
+        margin: 0;
+      }
+
+      h1, h2, h3, h4, h5, h6 {
+        font-size: var(--font-size-heading);
+        color: var(--text-color);
+      }
+
+      .form-control {
+        font-size: var(--font-size-input);
+        border-radius: calc(var(--border-radius) * 0.5);
+      }
+
+      .wrapper {
+        display: flex;
+        width: 100%;
+        min-height: 100vh;
+        position: relative;
+      }
+
+      /* Sidebar */
+      #sidebar {
+        width: var(--sidebar-width);
+        min-width: var(--sidebar-width);
+        max-width: var(--sidebar-width);
+        background: var(--sidebar-bg);
+        color: #fff;
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        z-index: 1000;
+        transition: all 0.3s ease;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+      }
+
+      #sidebar.active {
+        margin-left: calc(-1 * var(--sidebar-width));
+      }
+
+      #sidebar .sidebar-header {
+        padding: 20px;
+        text-align: center;
+        background: rgba(0, 0, 0, 0.1);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      #sidebar .sidebar-header h3 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 600;
+        color: #fff;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+        letter-spacing: 1px;
+      }
+
+      #sidebar ul.components {
+        padding: 20px 0 80px 0;
+        height: calc(100% - 180px);
+        overflow-y: auto;
+      }
+
+      #sidebar ul li {
+        margin: 8px 15px;
+      }
+
+      #sidebar ul li a {
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        color: rgba(255, 255, 255, 0.9);
+        text-decoration: none;
+        transition: all 0.3s ease;
+        border-radius: var(--border-radius);
+        position: relative;
+        overflow: hidden;
+      }
+
+      #sidebar ul li a::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: var(--menu-hover-bg);
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        z-index: -1;
+      }
+
+      #sidebar ul li a:hover {
+        background: var(--menu-hover-bg);
+        color: #fff;
+        transform: translateX(5px);
+      }
+
+      #sidebar ul li a:hover::before {
+        transform: translateX(0);
+      }
+
+      #sidebar ul li a.active {
+        background: var(--menu-active-bg);
+        color: #fff;
+        font-weight: 500;
+      }
+
+      #sidebar ul li a i {
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 10px;
+        font-size: 1.1em;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        transition: all 0.3s ease;
+      }
+
+      #sidebar ul li a:hover i {
+        background: rgba(255, 255, 255, 0.2);
+        transform: scale(1.1);
+      }
+
+      #sidebar ul li a span {
+        flex-grow: 1;
+      }
+
+      /* Collapse Button */
+      #sidebarCollapse {
+        background: var(--sidebar-bg);
+        border: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 1050;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+        display: none;
+      }
+
+      #sidebarCollapse:hover {
+        transform: scale(1.1);
+      }
+
+      #sidebarCollapse i {
+        color: #fff;
+        font-size: 1.2em;
+      }
+
+      /* Content Area */
+      #content {
+        flex: 1;
+        min-height: 100vh;
+        margin-left: var(--sidebar-width);
+        background: #f8f9fa;
+        transition: all 0.3s ease;
+        width: calc(100% - var(--sidebar-width));
+        position: relative;
+        padding: 20px;
+      }
+
+      #content.active {
+        margin-left: 0;
+        width: 100%;
+      }
+
+      /* Mobile Styles */
+      @media (max-width: 768px) {
+        #sidebar {
+          margin-left: calc(-1 * var(--sidebar-width));
+        }
+
+        #sidebar.active {
+          margin-left: 0;
+        }
+
+        #content {
+          margin-left: 0;
+          width: 100%;
+        }
+
+        #content.active {
+          margin-left: var(--sidebar-width);
+          width: calc(100% - var(--sidebar-width));
+        }
+
+        #sidebarCollapse {
+          display: flex;
+        }
+      }
+
+      /* Alert Styles */
+      .alert-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1050;
+        min-width: 300px;
+      }
+
+      .alert {
+        margin-bottom: 10px;
+        padding: 15px;
+        border: 1px solid transparent;
+        border-radius: 4px;
+        opacity: 1;
+        transition: opacity 0.5s ease-in-out;
+      }
+
+      .alert.fade-out {
+        opacity: 0;
+      }
+
+      .alert-success {
+        color: #155724;
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+      }
+
+      .alert-danger {
+        color: #721c24;
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+      }
+
+      .alert-warning {
+        color: #856404;
+        background-color: #fff3cd;
+        border-color: #ffeeba;
+      }
+
+      .alert-info {
+        color: #0c5460;
+        background-color: #d1ecf1;
+        border-color: #bee5eb;
+      }
+
+      .btn-primary {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+      }
+
+      .btn-primary:hover {
+        background-color: var(--secondary-color);
+        border-color: var(--secondary-color);
+      }
+
+      .bg-primary {
+        background-color: var(--primary-color) !important;
+      }
+
+      .card {
+        border-radius: var(--border-radius);
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .card-header {
+        border-top-left-radius: var(--border-radius);
+        border-top-right-radius: var(--border-radius);
+        {% if theme_header_style == 'gradient' %}
+        background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+        color: #fff;
+        {% elif theme_header_style == 'transparent' %}
+        background: rgba(0, 0, 0, 0.03);
+        color: var(--text-color);
+        {% else %}
+        background: var(--primary-color);
+        color: #fff;
+        {% endif %}
+        padding: 1rem 1.25rem;
+      }
+
+      .btn {
+        border-radius: calc(var(--border-radius) * 0.75);
+        transition: all 0.3s ease;
+      }
+
+      .form-control {
+        border-radius: calc(var(--border-radius) * 0.5);
+      }
+
+      /* Add smooth transition for all interactive elements */
+      a, button, .btn {
+        transition: all 0.3s ease;
+      }
+
+      /* Table Styles */
+      .table th {
+        color: var(--text-color);
+        font-weight: 600;
+      }
+
+      .table td {
+        color: var(--text-color);
+      }
+
+      /* Badge Styles */
+      .badge {
+        border-radius: calc(var(--border-radius) * 0.5);
+      }
+
+      /* Add these styles for the logout button */
+      .sidebar-footer {
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+        padding: 15px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .logout-btn {
+        display: flex;
+        align-items: center;
+        padding: 12px 20px;
+        color: rgba(255, 255, 255, 0.9);
+        text-decoration: none;
+        transition: all 0.3s ease;
+        border-radius: var(--border-radius);
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .logout-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        color: #fff;
+        transform: translateX(5px);
+      }
+
+      .logout-btn i {
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 10px;
+        font-size: 1.1em;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        transition: all 0.3s ease;
+      }
+
+      .logout-btn:hover i {
+        background: rgba(255, 255, 255, 0.2);
+        transform: scale(1.1);
+      }
+
+      /* Logout confirmation modal styles */
+      .logout-icon-wrapper {
+        width: 80px;
+        height: 80px;
+        background-color: #cfe2ff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+      }
+
+      .logout-icon-wrapper i {
+        font-size: 2.5rem;
+        color: var(--primary-color);
+      }
+
+      #logoutConfirmationModal .modal-content {
+        border: none;
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+        border-radius: 1rem;
+        overflow: hidden;
+      }
+
+      #logoutConfirmationModal .modal-header {
+        padding: 1.5rem;
+      }
+
+      #logoutConfirmationModal .btn {
+        padding: 0.6rem 1.5rem;
+        font-weight: 500;
+        border-radius: 0.5rem;
+        transition: all 0.3s ease;
+      }
+
+      #logoutConfirmationModal .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      }
+
+      /* Common modal styles for all confirmation dialogs */
+      .modal-dialog-centered.modal-sm {
+        max-width: 340px;
+      }
+
+      .confirmation-icon-wrapper {
+        width: 60px;
+        height: 60px;
+        background-color: rgba(var(--bs-primary-rgb), 0.1);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+      }
+
+      .confirmation-icon-wrapper i {
+        font-size: 1.8rem;
+        color: var(--primary-color);
+      }
+
+      .confirmation-modal .modal-content {
+        border: none;
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+        border-radius: 0.75rem;
+        overflow: hidden;
+      }
+
+      .confirmation-modal .modal-header {
+        padding: 1rem;
+        border: none;
+      }
+
+      .confirmation-modal .modal-body {
+        padding: 1.5rem 1rem;
+      }
+
+      .confirmation-modal .modal-footer {
+        padding: 0.75rem;
+        border: none;
+        background-color: rgba(0, 0, 0, 0.02);
+      }
+
+      .confirmation-modal h4 {
+        font-size: 1.25rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .confirmation-modal p {
+        font-size: 0.875rem;
+        margin-bottom: 0;
+      }
+
+      .confirmation-modal .btn {
+        padding: 0.4rem 1rem;
+        font-size: 0.875rem;
+      }
+
+      .confirmation-modal .btn i {
+        font-size: 0.875rem;
+      }
+
+      /* Specific modal variations */
+      .confirmation-modal.warning .confirmation-icon-wrapper {
+        background-color: rgba(255, 193, 7, 0.1);
+      }
+
+      .confirmation-modal.warning .confirmation-icon-wrapper i {
+        color: #ffc107;
+      }
+
+      .confirmation-modal.danger .confirmation-icon-wrapper {
+        background-color: rgba(220, 53, 69, 0.1);
+      }
+
+      .confirmation-modal.danger .confirmation-icon-wrapper i {
+        color: #dc3545;
+      }
+    </style>
+    {% block extra_css %}{% endblock %}
+  </head>
+  <body>
+    <div class="wrapper">
+      <!-- Sidebar -->
+      <nav id="sidebar">
+        <div class="sidebar-header">
+          <h3>{{ company_name }}</h3>
+        </div>
+
+        <ul class="list-unstyled components">
+          <li>
+            <a href="/emp/" class="{% if request.path == '/emp/' %}active{% endif %}">
+              <i class="fas fa-tachometer-alt"></i>
+              <span>Dashboard</span>
+            </a>
+          </li>
+          <li>
+            <a href="/emp/add-emp/" class="{% if request.path == '/emp/add-emp/' %}active{% endif %}">
+              <i class="fas fa-user-plus"></i>
+              <span>Add Employee</span>
+            </a>
+          </li>
+          <li>
+            <a href="/emp/home/" class="{% if request.path == '/emp/home/' %}active{% endif %}">
+              <i class="fas fa-table"></i>
+              <span>View Table</span>
+            </a>
+          </li>
+          <li>
+            <a href="{% url 'settings' %}" class="{% if request.path == '/emp/settings/' %}active{% endif %}">
+              <i class="fas fa-cog"></i>
+              <span>Settings</span>
+            </a>
+          </li>
+        </ul>
+
+        <!-- Logout Button -->
+        <div class="sidebar-footer">
+          <a href="#" class="logout-btn" onclick="showLogoutConfirmation(event)">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Logout</span>
+          </a>
+        </div>
+      </nav>
+
+      <!-- Page Content -->
+      <div id="content">
+        <button type="button" id="sidebarCollapse" class="btn btn-info">
+          <i class="fas fa-bars"></i>
+        </button>
+        
+        <!-- Alert Messages -->
+        <div class="alert-container">
+          {% if messages %}
+            {% for message in messages %}
+              <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+                <button type="button" class="btn-close float-end" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        </div>
+
+        <div class="container-fluid p-4">
+          {% block content %}
+          {% endblock %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Logout Confirmation Modal -->
+    <div class="modal fade confirmation-modal" id="logoutConfirmationModal" tabindex="-1" aria-labelledby="logoutConfirmationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="logoutConfirmationModalLabel">
+                        <i class="fas fa-sign-out-alt me-2"></i>Logout
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="confirmation-icon-wrapper mb-2">
+                        <i class="fas fa-user-lock"></i>
+                    </div>
+                    <h4>Ready to Leave?</h4>
+                    <p class="text-muted">End your current session?</p>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="confirmLogout()">
+                        <i class="fas fa-sign-out-alt me-1"></i>Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-OERcA2EqjJCMA+/3y+gxIOqMEjwtxJY7qPCqsdltbNJuaOe923+mo//f6V8Qbsw3"
+            crossorigin="anonymous"></script>
+    <script>
+      // Sidebar toggle functionality
+      document.getElementById('sidebarCollapse').addEventListener('click', function() {
+        const sidebar = document.getElementById('sidebar');
+        const content = document.getElementById('content');
+        
+        sidebar.classList.toggle('active');
+        content.classList.toggle('active');
+        
+        // Store sidebar state in localStorage
+        localStorage.setItem('sidebarActive', sidebar.classList.contains('active'));
+      });
+
+      // Restore sidebar state on page load
+      document.addEventListener('DOMContentLoaded', function() {
+        const sidebar = document.getElementById('sidebar');
+        const content = document.getElementById('content');
+        const sidebarActive = localStorage.getItem('sidebarActive') === 'true';
+        
+        if (sidebarActive) {
+          sidebar.classList.add('active');
+          content.classList.add('active');
+        }
+
+        // Auto-dismiss alerts after 5 seconds
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(function(alert) {
+          setTimeout(function() {
+            alert.classList.add('fade-out');
+            setTimeout(function() {
+              alert.remove();
+            }, 500);
+          }, 5000);
+        });
+      });
+
+      // Prevent going back after logout
+      window.onload = function() {
+        if (window.history.replaceState) {
+          window.history.replaceState(null, null, window.location.href);
+        }
+      }
+      
+      // Disable browser back button
+      window.history.pushState(null, null, window.location.href);
+      window.onpopstate = function () {
+          window.history.pushState(null, null, window.location.href);
+      };
+
+      // Prevent back button after logout
+      function preventBack() {
+        window.history.forward();
+      }
+      
+      setTimeout("preventBack()", 0);
+      
+      window.onunload = function () {
+        null;
+      };
+      
+      // Initialize logout modal
+      let logoutModal = null;
+      document.addEventListener('DOMContentLoaded', function() {
+        const logoutModalElement = document.getElementById('logoutConfirmationModal');
+        if (logoutModalElement) {
+          logoutModal = new bootstrap.Modal(logoutModalElement);
+        }
+      });
+
+      function showLogoutConfirmation(event) {
+        event.preventDefault();
+        if (logoutModal) {
+          logoutModal.show();
+        }
+      }
+
+      function confirmLogout() {
+        // Clear all storage
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        // Clear all cookies
+        document.cookie.split(";").forEach(function(c) {
+          document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+        });
+        
+        // Prevent back button
+        window.history.forward();
+        
+        // Redirect to logout URL
+        window.location.href = "{% url 'logout' %}";
+      }
+    </script>
+    {% block extra_js %}{% endblock %}
+  </body>
+</html> 

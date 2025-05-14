@@ -1,0 +1,657 @@
+{% extends 'emp/base.html' %}
+
+{% block title %}Employee Table - EMS{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1 class="text-center my-3">Employees Table</h1>
+    
+    <!-- Back Button -->
+    <div id="backButton" class="mb-3" style="display: none;">
+        <button class="btn btn-secondary" onclick="resetView()">
+            <i class="fas fa-arrow-left me-2"></i>Back to Full Table
+        </button>
+    </div>
+    
+    <!-- Search and Filter Section -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="search-box">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="searchInput" class="form-control" placeholder="Search employees...">
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="d-flex gap-3">
+                        <select id="departmentFilter" class="form-select">
+                            <option value="">All Departments</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept }}">{{ dept }}</option>
+                            {% endfor %}
+                        </select>
+                        <select id="statusFilter" class="form-select">
+                            <option value="">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-light table-striped table-hover align-middle" id="employeeTable">
+                    <thead>
+                        <tr>
+                            <th>S.NO.</th>
+                            <th>PROFILE</th>
+                            <th>ID</th>
+                            <th>NAME</th>
+                            <th>AGE</th>
+                            <th>PHONE</th>
+                            <th>SALARY</th>
+                            <th>DEPARTMENT</th>
+                            <th>ADDRESS</th>
+                            <th>WORKING STATUS</th>
+                            <th>ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for e in emps %}
+                        <tr class="clickable-row" data-name="{{e.name}}" data-department="{{e.department}}" data-status="{{e.working|yesno:'active,inactive'}}">
+                            <td>{{forloop.counter}}</td>
+                            <td>
+                                <div class="profile-pic-small">
+                                    <img src="{% if e.profile_pic %}{{ e.profile_pic.url }}{% else %}/media/profile_pics/default.png{% endif %}" 
+                                         class="rounded-circle" alt="{{ e.name }}'s profile">
+                                </div>
+                            </td>
+                            <td>{{e.emp_id}}</td>
+                            <td>{{e.name}}</td>
+                            <td>{{e.age}}</td>
+                            <td>{{e.phone}}</td>
+                            <td>₱{{e.salary|floatformat:2}}</td>
+                            <td>{{e.department}}</td>
+                            <td>{{e.address}}</td>
+                            <td>
+                                {% if e.working %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-danger">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="#" onclick="confirmDelete('{{e.name}}', '{{e.id}}')" class="btn btn-danger btn-sm">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                                <a href="/emp/update-emp/{{e.id}}" class="btn btn-success btn-sm">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {%endfor%}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade confirmation-modal danger" id="deleteConfirmationModal" tabindex="-1" aria-labelledby="deleteConfirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteConfirmationModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Delete
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div class="confirmation-icon-wrapper mb-2">
+                    <i class="fas fa-user-times"></i>
+                </div>
+                <h4>Delete Employee?</h4>
+                <p class="text-muted">"<span id="deleteEmployeeName"></span>" will be removed.</p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteButton">
+                    <i class="fas fa-trash-alt me-1"></i>Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+.profile-pic-small {
+    width: 35px;
+    height: 35px;
+    overflow: hidden;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.profile-pic-small img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border: 1px solid var(--primary-color);
+}
+
+/* Table Styles */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table {
+    width: 100%;
+    margin-bottom: 1rem;
+    table-layout: auto;
+}
+
+.table th {
+    white-space: nowrap;
+    background-color: #f8f9fa;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 1rem 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    vertical-align: middle;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.table td {
+    vertical-align: middle;
+    padding: 0.75rem;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Column-specific widths */
+.table th:nth-child(1), /* S.NO. */
+.table td:nth-child(1) {
+    width: 5%;
+    min-width: 50px;
+}
+
+.table th:nth-child(2), /* PROFILE */
+.table td:nth-child(2) {
+    width: 8%;
+    min-width: 60px;
+}
+
+.table th:nth-child(3), /* ID */
+.table td:nth-child(3) {
+    width: 10%;
+    min-width: 100px;
+}
+
+.table th:nth-child(4), /* NAME */
+.table td:nth-child(4) {
+    width: 15%;
+    min-width: 120px;
+}
+
+.table th:nth-child(5), /* AGE */
+.table td:nth-child(5) {
+    width: 5%;
+    min-width: 60px;
+}
+
+.table th:nth-child(6), /* PHONE */
+.table td:nth-child(6) {
+    width: 12%;
+    min-width: 110px;
+}
+
+.table th:nth-child(7), /* SALARY */
+.table td:nth-child(7) {
+    width: 10%;
+    min-width: 100px;
+}
+
+.table th:nth-child(8), /* DEPARTMENT */
+.table td:nth-child(8) {
+    width: 15%;
+    min-width: 150px;
+}
+
+.table th:nth-child(9), /* ADDRESS */
+.table td:nth-child(9) {
+    width: 15%;
+    min-width: 150px;
+}
+
+.table th:nth-child(10), /* STATUS */
+.table td:nth-child(10) {
+    width: 8%;
+    min-width: 80px;
+    text-align: center;
+}
+
+.table th:nth-child(11), /* ACTION */
+.table td:nth-child(11) {
+    width: 8%;
+    min-width: 90px;
+    text-align: center;
+}
+
+/* Make table more compact on smaller screens */
+@media (max-width: 768px) {
+    .table th,
+    .table td {
+        padding: 0.5rem 0.25rem;
+        font-size: 0.8rem;
+    }
+    
+    .profile-pic-small {
+        width: 30px;
+        height: 30px;
+    }
+    
+    .btn-sm {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.75rem;
+    }
+}
+
+/* Hover effects */
+.table tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.075) !important;
+    transition: background-color 0.2s ease;
+}
+
+/* Status badge styles */
+.badge {
+    font-size: 0.75rem;
+    padding: 0.4em 0.6em;
+    font-weight: 500;
+}
+
+.search-box {
+    position: relative;
+}
+
+.search-icon {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    pointer-events: none;
+}
+
+#searchInput {
+    padding-left: 40px;
+    padding-right: 40px;
+    border-radius: 20px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+#searchInput:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(var(--primary-rgb), 0.25);
+}
+
+#searchInput::placeholder {
+    color: #adb5bd;
+}
+
+.form-select {
+    min-width: 150px;
+}
+
+.clickable-row {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.clickable-row:hover {
+    background-color: rgba(0, 0, 0, 0.075) !important;
+}
+
+.table-active {
+    background-color: rgba(0, 123, 255, 0.1) !important;
+}
+
+/* Action buttons container */
+.btn-group-action {
+    display: flex;
+    gap: 0.25rem;
+    justify-content: center;
+}
+
+/* Card styles */
+.card {
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.card-body {
+    padding: 1.25rem;
+}
+
+/* Back button styles */
+#backButton {
+    position: relative;
+    z-index: 2;
+    transition: all 0.3s ease;
+}
+
+#backButton .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+#backButton .btn:hover {
+    transform: translateX(-5px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Smooth transitions for filtering */
+.clickable-row {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.table-active {
+    transform: scale(1.01);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Enhanced Modal Styles */
+.modal-content {
+    border: none;
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+.modal-header {
+    padding: 1.5rem;
+}
+
+.modal-body {
+    padding: 2rem;
+}
+
+.modal-footer {
+    padding: 1.5rem;
+    background-color: #f8f9fa;
+}
+
+.delete-icon-wrapper {
+    width: 80px;
+    height: 80px;
+    background-color: #fee2e2;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+}
+
+.delete-icon-wrapper i {
+    font-size: 2.5rem;
+    color: #dc3545;
+}
+
+.alert {
+    border: none;
+    border-radius: 0.5rem;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.btn {
+    padding: 0.6rem 1.5rem;
+    font-weight: 500;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.btn-close-white {
+    filter: brightness(0) invert(1);
+}
+
+/* Animation for modal */
+.modal.fade .modal-dialog {
+    transition: transform 0.3s ease-out;
+}
+
+.modal.fade .modal-dialog {
+    transform: scale(0.95);
+}
+
+.modal.show .modal-dialog {
+    transform: scale(1);
+}
+
+/* No Results Message */
+#noResultsMessage {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+#noResultsMessage .btn-link {
+    padding: 0;
+    vertical-align: baseline;
+    text-decoration: none;
+}
+
+#noResultsMessage .btn-link:hover {
+    text-decoration: underline;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmDelete(name, id) {
+    // Initialize Bootstrap modal if not already initialized
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmationModal'));
+    
+    // Set employee name in modal
+    document.getElementById('deleteEmployeeName').textContent = name;
+    
+    // Set up delete confirmation button
+    document.getElementById('confirmDeleteButton').onclick = function() {
+        window.location.href = `/emp/delete-emp/${id}`;
+    };
+    
+    // Show modal
+    deleteModal.show();
+}
+
+// Search and Filter Functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const departmentFilter = document.getElementById('departmentFilter');
+    const statusFilter = document.getElementById('statusFilter');
+    const table = document.getElementById('employeeTable');
+    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    const backButton = document.getElementById('backButton');
+
+    // Add click event listeners to rows
+    document.querySelectorAll('.clickable-row').forEach(row => {
+        row.addEventListener('click', function(e) {
+            // Don't trigger if clicking action buttons
+            if (e.target.closest('.btn')) return;
+            
+            // Get data from row
+            const name = this.dataset.name;
+            const department = this.dataset.department;
+            const status = this.dataset.status;
+            
+            // Set values in filters
+            searchInput.value = name;
+            departmentFilter.value = department;
+            statusFilter.value = status;
+            
+            // Show back button
+            backButton.style.display = 'block';
+            
+            // Highlight selected row
+            document.querySelectorAll('.clickable-row').forEach(r => r.classList.remove('table-active'));
+            this.classList.add('table-active');
+            
+            // Filter table
+            filterTable();
+            
+            // Smooth scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    });
+
+    function resetView() {
+        // Clear all filters
+        searchInput.value = '';
+        departmentFilter.value = '';
+        statusFilter.value = '';
+        
+        // Hide back button
+        backButton.style.display = 'none';
+        
+        // Remove row highlighting
+        document.querySelectorAll('.clickable-row').forEach(r => r.classList.remove('table-active'));
+        
+        // Show all rows
+        filterTable();
+    }
+
+    function filterTable() {
+        const searchText = searchInput.value.toLowerCase();
+        const department = departmentFilter.value.toLowerCase();
+        const status = statusFilter.value.toLowerCase();
+
+        let visibleRows = 0;
+        for (let row of rows) {
+            // Get all searchable content from the row
+            const id = row.cells[2].textContent.toLowerCase();
+            const name = row.cells[3].textContent.toLowerCase();
+            const age = row.cells[4].textContent.toLowerCase();
+            const phone = row.cells[5].textContent.toLowerCase();
+            const salary = row.cells[6].textContent.toLowerCase();
+            const rowDepartment = row.cells[7].textContent.toLowerCase();
+            const address = row.cells[8].textContent.toLowerCase();
+            const rowStatus = row.querySelector('.badge').textContent.toLowerCase();
+
+            // Check if search text matches any field
+            const matchesSearch = searchText === '' || 
+                id.includes(searchText) || 
+                name.includes(searchText) || 
+                age.includes(searchText) || 
+                phone.includes(searchText) || 
+                salary.includes(searchText) || 
+                rowDepartment.includes(searchText) || 
+                address.includes(searchText);
+
+            // Check department and status filters
+            const matchesDepartment = department === '' || rowDepartment === department;
+            const matchesStatus = status === '' || rowStatus.includes(status);
+
+            // Show/hide row based on all filters
+            const shouldShow = matchesSearch && matchesDepartment && matchesStatus;
+            row.style.display = shouldShow ? '' : 'none';
+            if (shouldShow) visibleRows++;
+        }
+
+        // Show/hide back button based on filter state
+        backButton.style.display = (searchText || department || status) ? 'block' : 'none';
+
+        // Update no results message
+        updateNoResultsMessage(visibleRows);
+    }
+
+    function updateNoResultsMessage(visibleRows) {
+        // Remove existing message if it exists
+        const existingMessage = document.getElementById('noResultsMessage');
+        if (existingMessage) {
+            existingMessage.remove();
+        }
+
+        // Add message if no results
+        if (visibleRows === 0) {
+            const table = document.getElementById('employeeTable');
+            const messageDiv = document.createElement('div');
+            messageDiv.id = 'noResultsMessage';
+            messageDiv.className = 'alert alert-info text-center mt-3';
+            messageDiv.innerHTML = `
+                <i class="fas fa-search me-2"></i>
+                No employees found matching your search criteria.
+                <button class="btn btn-link" onclick="resetFilters()">Clear filters</button>
+            `;
+            table.parentNode.insertBefore(messageDiv, table.nextSibling);
+        }
+    }
+
+    function resetFilters() {
+        searchInput.value = '';
+        departmentFilter.value = '';
+        statusFilter.value = '';
+        filterTable();
+    }
+
+    // Expose resetView to global scope
+    window.resetView = resetView;
+
+    // Add input event listeners
+    searchInput.addEventListener('input', debounce(filterTable, 300));
+    departmentFilter.addEventListener('change', filterTable);
+    statusFilter.addEventListener('change', filterTable);
+
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+
+// Debounce function to improve search performance
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+</script>
+{% endblock %}
+{% endblock %}

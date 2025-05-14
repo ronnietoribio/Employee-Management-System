@@ -1,0 +1,648 @@
+{% extends 'emp/base.html' %}
+
+{% block title %}Update Employee - {{ company_name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h4 class="mb-0">Update Employee</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="/emp/do-update-emp/{{emp.id}}" enctype="multipart/form-data" id="updateForm">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label for="emp_name" class="form-label">Employee Name</label>
+                                    <input type="text" class="form-control" id="emp_name" name="emp_name" value="{{emp.name}}" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="emp_id" class="form-label">Employee ID</label>
+                                    <input type="text" class="form-control" id="emp_id" name="emp_id" value="{{emp.emp_id}}" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="emp_phone" class="form-label">Phone Number</label>
+                                    <div class="input-group has-validation">
+                                        <input type="tel" 
+                                               class="form-control" 
+                                               id="emp_phone" 
+                                               name="emp_phone" 
+                                               value="{{emp.phone}}"
+                                               pattern="09[0-9]{9}"
+                                               maxlength="11"
+                                               placeholder="09XXXXXXXXX"
+                                               oninput="formatPhoneNumber(this)"
+                                               required>
+                                        <div class="invalid-feedback">
+                                            Please enter a valid phone number starting with 09 (11 digits)
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">Format: 09XXXXXXXXX (11 digits)</small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="emp_age" class="form-label">Age</label>
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="emp_age" 
+                                           name="emp_age" 
+                                           value="{{emp.age}}"
+                                           min="18" 
+                                           max="100"
+                                           required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="emp_salary" class="form-label">Salary</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">₱</span>
+                                        <input type="number" 
+                                               class="form-control" 
+                                               id="emp_salary" 
+                                               name="emp_salary" 
+                                               value="{{emp.salary}}"
+                                               min="0" 
+                                               step="0.01"
+                                               oninput="validateSalary(this)"
+                                               required>
+                                        <div class="invalid-feedback">Please enter a valid salary amount (minimum ₱0)</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="emp_address" class="form-label">Address</label>
+                                    <textarea class="form-control" id="emp_address" name="emp_address" rows="3" required>{{emp.address}}</textarea>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="mb-3 text-center">
+                                    <label class="form-label d-block">Profile Picture</label>
+                                    <div class="profile-pic-wrapper mb-3">
+                                        <img id="preview" src="{% if emp.profile_pic %}{{ emp.profile_pic.url }}{% else %}/media/profile_pics/default.png{% endif %}" 
+                                             class="rounded-circle profile-pic" alt="Profile Picture">
+                                    </div>
+                                    <input type="file" class="form-control" id="profile_pic" name="profile_pic" accept="image/*" onchange="previewImage(this);">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="emp_department" class="form-label">Department</label>
+                            <select class="form-select" id="emp_department" name="emp_department" required>
+                                {% for dept in departments %}
+                                <option value="{{ dept }}" {% if dept == emp.department %}selected{% endif %}>{{ dept }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="emp_working" class="form-label">Working Status</label>
+                            <select class="form-select" id="emp_working" name="emp_working">
+                                <option value="true" {% if emp.working %}selected{% endif %}>Active</option>
+                                <option value="false" {% if not emp.working %}selected{% endif %}>Inactive</option>
+                            </select>
+                        </div>
+                        
+                        <div class="text-end">
+                            <button type="button" class="btn btn-secondary me-2" onclick="handleCancel()">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </button>
+                            <button type="button" class="btn btn-primary" onclick="validateAndConfirm()">
+                                <i class="fas fa-save me-2"></i>Update Employee
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Update Confirmation Modal -->
+<div class="modal fade" id="updateConfirmationModal" tabindex="-1" aria-labelledby="updateConfirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white border-0">
+                <h5 class="modal-title" id="updateConfirmationModalLabel">
+                    <i class="fas fa-user-edit me-2"></i>Confirm Update
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <div class="update-icon-wrapper mb-3">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <h4 class="mb-3">Update Employee Information?</h4>
+                    <div class="employee-info alert alert-info">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-id-card me-2"></i>
+                            <strong>Employee Details:</strong>
+                        </div>
+                        <div class="ms-4">
+                            <div><strong>Name:</strong> <span id="confirmName">{{emp.name}}</span></div>
+                            <div><strong>ID:</strong> <span id="confirmId">{{emp.emp_id}}</span></div>
+                        </div>
+                    </div>
+                    <div id="changedFields" class="alert alert-warning" style="display: none;">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-edit me-2"></i>
+                            <strong>Fields to be updated:</strong>
+                        </div>
+                        <ul id="changedFieldsList" class="list-unstyled ms-4 mb-0"></ul>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-primary px-4" onclick="submitForm()">
+                    <i class="fas fa-check me-2"></i>Confirm Update
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Unsaved Changes Confirmation Modal -->
+<div class="modal fade confirmation-modal warning" id="unsavedChangesModal" tabindex="-1" aria-labelledby="unsavedChangesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="unsavedChangesModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Unsaved Changes
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div class="confirmation-icon-wrapper mb-2">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <h4>Discard Changes?</h4>
+                <p class="text-muted">All changes will be lost.</p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-arrow-left me-1"></i>Keep Editing
+                </button>
+                <button type="button" class="btn btn-warning" onclick="confirmDiscard()">
+                    <i class="fas fa-times me-1"></i>Discard
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .profile-pic-wrapper {
+        width: 150px;
+        height: 150px;
+        margin: 0 auto;
+        position: relative;
+        overflow: hidden;
+        border-radius: 50%;
+        border: 3px solid var(--primary-color);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .profile-pic {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: all 0.3s ease;
+    }
+    
+    #profile_pic {
+        max-width: 200px;
+        margin: 0 auto;
+    }
+
+    /* Enhanced Modal Styles */
+    .modal-content {
+        border: none;
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+        border-radius: 1rem;
+        overflow: hidden;
+    }
+
+    .modal-header {
+        padding: 1.5rem;
+    }
+
+    .modal-body {
+        padding: 2rem;
+    }
+
+    .modal-footer {
+        padding: 1.5rem;
+        background-color: #f8f9fa;
+    }
+
+    .update-icon-wrapper {
+        width: 80px;
+        height: 80px;
+        background-color: #cfe2ff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+    }
+
+    .update-icon-wrapper i {
+        font-size: 2.5rem;
+        color: var(--primary-color);
+    }
+
+    .alert {
+        border: none;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .alert-info {
+        background-color: #f0f7ff;
+        color: #084298;
+    }
+
+    .alert-warning {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+
+    .employee-info {
+        text-align: left;
+    }
+
+    #changedFieldsList {
+        text-align: left;
+    }
+
+    #changedFieldsList li {
+        margin-top: 0.5rem;
+        padding-left: 1.5rem;
+        position: relative;
+    }
+
+    #changedFieldsList li::before {
+        content: '•';
+        position: absolute;
+        left: 0;
+        color: #856404;
+    }
+
+    .btn {
+        padding: 0.6rem 1.5rem;
+        font-weight: 500;
+        border-radius: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .btn-close-white {
+        filter: brightness(0) invert(1);
+    }
+
+    /* Animation for modal */
+    .modal.fade .modal-dialog {
+        transition: transform 0.3s ease-out;
+    }
+
+    .modal.fade .modal-dialog {
+        transform: scale(0.95);
+    }
+
+    .modal.show .modal-dialog {
+        transform: scale(1);
+    }
+
+    /* Form field status icons */
+    .is-valid ~ .valid-feedback::before {
+        content: '\f058';
+        font-family: 'Font Awesome 5 Free';
+        font-weight: 900;
+        margin-right: 0.5rem;
+        color: #198754;
+    }
+
+    .is-invalid ~ .invalid-feedback::before {
+        content: '\f057';
+        font-family: 'Font Awesome 5 Free';
+        font-weight: 900;
+        margin-right: 0.5rem;
+        color: #dc3545;
+    }
+
+    /* Unsaved changes modal styles */
+    .confirmation-icon-wrapper {
+        width: 80px;
+        height: 80px;
+        background-color: #fff3cd;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+    }
+
+    .confirmation-icon-wrapper i {
+        font-size: 2.5rem;
+        color: #856404;
+    }
+
+    #unsavedChangesModal .modal-content {
+        border: none;
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+        border-radius: 1rem;
+        overflow: hidden;
+    }
+
+    #unsavedChangesModal .modal-header {
+        background-color: #fff3cd;
+        color: #856404;
+        padding: 1.5rem;
+    }
+
+    #unsavedChangesModal .btn-warning {
+        background-color: #ffc107;
+        border-color: #ffc107;
+        color: #000;
+    }
+
+    #unsavedChangesModal .btn-warning:hover {
+        background-color: #ffca2c;
+        border-color: #ffc720;
+        transform: translateY(-1px);
+    }
+</style>
+
+<script>
+    // Initialize variables
+    let updateModal = null;
+    let originalFormData = {};
+    let unsavedChangesModal = null;
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Bootstrap modals
+        const modalElement = document.getElementById('updateConfirmationModal');
+        const unsavedModalElement = document.getElementById('unsavedChangesModal');
+        
+        if (modalElement) {
+            updateModal = new bootstrap.Modal(modalElement);
+        }
+        if (unsavedModalElement) {
+            unsavedChangesModal = new bootstrap.Modal(unsavedModalElement);
+        }
+        
+        // Store original form data
+        const form = document.getElementById('updateForm');
+        if (form) {
+            const formElements = form.elements;
+            for (let element of formElements) {
+                if (element.name) {
+                    originalFormData[element.name] = element.type === 'checkbox' ? element.checked : element.value;
+                }
+            }
+
+            // Add form submit handler
+            form.addEventListener('submit', function(e) {
+                if (!validateForm()) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        }
+
+        // Initialize input validations
+        const phone = document.getElementById('emp_phone');
+        const salary = document.getElementById('emp_salary');
+        
+        if (phone) {
+            phone.addEventListener('input', function() {
+                formatPhoneNumber(this);
+                validatePhone(this);
+            });
+            if (phone.value) validatePhone(phone);
+        }
+        
+        if (salary) {
+            salary.addEventListener('input', function() {
+                validateSalary(this);
+            });
+            if (salary.value) validateSalary(salary);
+        }
+    });
+
+    function formatPhoneNumber(input) {
+        // Remove all non-numeric characters
+        let value = input.value.replace(/\D/g, '');
+        
+        // Ensure it starts with '09'
+        if (value.length >= 2 && value.substring(0, 2) !== '09') {
+            value = '09' + value.substring(2);
+        }
+        
+        // Limit to 11 digits
+        value = value.substring(0, 11);
+        
+        input.value = value;
+    }
+
+    function validatePhone(input) {
+        const phonePattern = /^09[0-9]{9}$/;
+        const value = input.value.replace(/\D/g, '');
+        const isValid = phonePattern.test(value);
+        
+        input.classList.remove('is-invalid', 'is-valid');
+        if (value.length > 0) {
+            input.classList.add(isValid ? 'is-valid' : 'is-invalid');
+        }
+        
+        return isValid;
+    }
+
+    function validateSalary(input) {
+        const value = parseFloat(input.value);
+        const isValid = !isNaN(value) && value >= 0;
+        
+        input.classList.remove('is-invalid', 'is-valid');
+        if (input.value.length > 0) {
+            input.classList.add(isValid ? 'is-valid' : 'is-invalid');
+        }
+        
+        return isValid;
+    }
+
+    function validateForm() {
+        const phone = document.getElementById('emp_phone');
+        const salary = document.getElementById('emp_salary');
+        let isValid = true;
+        
+        if (phone) {
+            const isPhoneValid = validatePhone(phone);
+            if (!isPhoneValid) {
+                phone.focus();
+                phone.classList.add('is-invalid');
+                isValid = false;
+            }
+        }
+        
+        if (salary) {
+            const isSalaryValid = validateSalary(salary);
+            if (!isSalaryValid) {
+                if (isValid) salary.focus();
+                salary.classList.add('is-invalid');
+                isValid = false;
+            }
+        }
+        
+        return isValid;
+    }
+
+    function validateAndConfirm() {
+        if (!validateForm()) {
+            return false;
+        }
+
+        const changes = getChangedFields();
+        const changedFieldsDiv = document.getElementById('changedFields');
+        const changedFieldsList = document.getElementById('changedFieldsList');
+        
+        if (changedFieldsDiv && changedFieldsList) {
+            if (changes.length > 0) {
+                changedFieldsList.innerHTML = changes.map(change => 
+                    `<li>
+                        <i class="fas ${change.icon} me-2"></i>
+                        ${change.field.charAt(0).toUpperCase() + change.field.slice(1)}
+                        ${change.value ? `<span class="text-muted">→ ${change.value}</span>` : ''}
+                    </li>`
+                ).join('');
+                changedFieldsDiv.style.display = 'block';
+            } else {
+                changedFieldsDiv.style.display = 'none';
+            }
+        }
+
+        if (updateModal) {
+            updateModal.show();
+        }
+    }
+
+    function submitForm() {
+        const form = document.getElementById('updateForm');
+        if (form && updateModal) {
+            updateModal.hide();
+            form.submit();
+        }
+    }
+
+    function getChangedFields() {
+        const changes = [];
+        const form = document.getElementById('updateForm');
+        const formElements = form.elements;
+        
+        for (let element of formElements) {
+            if (element.name && element.name !== 'csrfmiddlewaretoken') {
+                if (element.type === 'checkbox') {
+                    if (element.checked !== originalFormData[element.name]) {
+                        changes.push({
+                            field: element.name.replace('emp_', '').replace('_', ' '),
+                            value: element.checked ? 'Active' : 'Inactive',
+                            icon: 'fa-toggle-' + (element.checked ? 'on' : 'off')
+                        });
+                    }
+                } else if (element.type !== 'file' && element.value !== originalFormData[element.name]) {
+                    changes.push({
+                        field: element.name.replace('emp_', '').replace('_', ' '),
+                        value: element.value,
+                        icon: getFieldIcon(element.name)
+                    });
+                }
+            }
+        }
+        
+        // Check for file input changes
+        const fileInput = document.getElementById('profile_pic');
+        if (fileInput && fileInput.files.length > 0) {
+            changes.push({
+                field: 'profile picture',
+                value: fileInput.files[0].name,
+                icon: 'fa-image'
+            });
+        }
+        
+        return changes;
+    }
+
+    function getFieldIcon(fieldName) {
+        const icons = {
+            'emp_name': 'fa-user',
+            'emp_id': 'fa-id-badge',
+            'emp_phone': 'fa-phone',
+            'emp_salary': 'fa-dollar-sign',
+            'emp_department': 'fa-building',
+            'emp_address': 'fa-map-marker-alt',
+            'emp_age': 'fa-birthday-cake'
+        };
+        return icons[fieldName] || 'fa-edit';
+    }
+
+    // Preview image function
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('preview').setAttribute('src', e.target.result);
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // Replace the existing handleCancel function with this new version
+    function handleCancel() {
+        // Check if there are any unsaved changes
+        const changes = getChangedFields();
+        
+        if (changes.length > 0) {
+            // Show the custom unsaved changes modal
+            if (unsavedChangesModal) {
+                unsavedChangesModal.show();
+            }
+        } else {
+            // No changes, just go back
+            navigateBack();
+        }
+    }
+
+    function confirmDiscard() {
+        if (unsavedChangesModal) {
+            unsavedChangesModal.hide();
+        }
+        navigateBack();
+    }
+
+    function navigateBack() {
+        // Try to use the referrer first
+        if (document.referrer && document.referrer.includes(window.location.host)) {
+            window.location.href = document.referrer;
+        } else {
+            // Fallback to the employee list page
+            window.location.href = '/emp/view-emp';
+        }
+    }
+</script>
+{% endblock %}

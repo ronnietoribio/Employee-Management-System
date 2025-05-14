@@ -1,0 +1,235 @@
+{% extends 'emp/base.html' %}
+
+{% block title %}Settings - EMS{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="text-center mb-4">System Settings</h1>
+
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+        
+        <!-- Company Information -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-building me-2"></i>Company Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="company_name" class="form-label">Company Name</label>
+                    <input type="text" class="form-control" id="company_name" name="company_name" value="{{ settings.company_name }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="company_address" class="form-label">Company Address</label>
+                    <textarea class="form-control" id="company_address" name="company_address" rows="2">{{ settings.company_address }}</textarea>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="company_contact" class="form-label">Contact Number</label>
+                        <input type="text" class="form-control" id="company_contact" name="company_contact" value="{{ settings.company_contact }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="company_email" class="form-label">Company Email</label>
+                        <input type="email" class="form-control" id="company_email" name="company_email" value="{{ settings.company_email }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Department Configuration -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-sitemap me-2"></i>Department Configuration</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="department_choices" class="form-label">Department List</label>
+                    <textarea class="form-control" id="department_choices" name="department_choices" rows="3" placeholder="Enter department names separated by commas">{{ settings.department_choices }}</textarea>
+                    <div class="form-text">Example: HR, IT, Finance, Marketing</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Email Notifications -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-envelope me-2"></i>Email Notifications</h5>
+            </div>
+            <div class="card-body">
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="enable_email_notifications" name="enable_email_notifications" {% if settings.enable_email_notifications %}checked{% endif %}>
+                    <label class="form-check-label" for="enable_email_notifications">Enable Email Notifications</label>
+                </div>
+                <div class="mb-3">
+                    <label for="notification_email" class="form-label">Notification Email Address</label>
+                    <input type="email" class="form-control" id="notification_email" name="notification_email" value="{{ settings.notification_email }}">
+                </div>
+            </div>
+        </div>
+
+        <!-- System Settings -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-cogs me-2"></i>System Settings</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="items_per_page" class="form-label">Items Per Page</label>
+                        <input type="number" class="form-control" id="items_per_page" name="items_per_page" value="{{ settings.items_per_page }}" min="5" max="100">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check form-switch mt-4">
+                            <input class="form-check-input" type="checkbox" id="enable_audit_trail" name="enable_audit_trail" {% if settings.enable_audit_trail %}checked{% endif %}>
+                            <label class="form-check-label" for="enable_audit_trail">Enable Audit Trail</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Theme Settings -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-paint-brush me-2"></i>Theme Customization</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="primary_color" class="form-label">Primary Color</label>
+                        <div class="input-group">
+                            <input type="color" class="form-control form-control-color" id="primary_color" name="primary_color" value="{{ settings.primary_color }}">
+                            <input type="text" class="form-control" value="{{ settings.primary_color }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="secondary_color" class="form-label">Secondary Color</label>
+                        <div class="input-group">
+                            <input type="color" class="form-control form-control-color" id="secondary_color" name="secondary_color" value="{{ settings.secondary_color }}">
+                            <input type="text" class="form-control" value="{{ settings.secondary_color }}" readonly>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="text_color" class="form-label">Text Color</label>
+                        <div class="input-group">
+                            <input type="color" class="form-control form-control-color" id="text_color" name="text_color" value="{{ settings.text_color }}">
+                            <input type="text" class="form-control" value="{{ settings.text_color }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="header_style" class="form-label">Header Style</label>
+                        <select class="form-select" id="header_style" name="header_style">
+                            <option value="solid" {% if settings.header_style == 'solid' %}selected{% endif %}>Solid Color</option>
+                            <option value="gradient" {% if settings.header_style == 'gradient' %}selected{% endif %}>Gradient</option>
+                            <option value="transparent" {% if settings.header_style == 'transparent' %}selected{% endif %}>Transparent</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="border_radius" class="form-label">Border Radius (px)</label>
+                        <input type="range" class="form-range" id="border_radius" name="border_radius" min="0" max="20" value="{{ settings.border_radius }}">
+                        <div class="text-center" id="border_radius_value">{{ settings.border_radius }}px</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="font_size" class="form-label">Font Size</label>
+                        <select class="form-select" id="font_size" name="font_size">
+                            <option value="small" {% if settings.font_size == 'small' %}selected{% endif %}>Small</option>
+                            <option value="medium" {% if settings.font_size == 'medium' %}selected{% endif %}>Medium</option>
+                            <option value="large" {% if settings.font_size == 'large' %}selected{% endif %}>Large</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center">
+            <button type="submit" class="btn btn-primary btn-lg">
+                <i class="fas fa-save me-2"></i>Save Settings
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const root = document.documentElement;
+
+// Handle color inputs
+document.querySelectorAll('input[type="color"]').forEach(colorInput => {
+    colorInput.addEventListener('input', function() {
+        this.nextElementSibling.value = this.value;
+        
+        // Update CSS variables immediately
+        if (this.id === 'primary_color') {
+            root.style.setProperty('--primary-color', this.value);
+        } else if (this.id === 'secondary_color') {
+            root.style.setProperty('--secondary-color', this.value);
+        } else if (this.id === 'text_color') {
+            root.style.setProperty('--text-color', this.value);
+        }
+        
+        // Update header style if using gradient
+        if (document.getElementById('header_style').value === 'gradient') {
+            updateHeaderStyle('gradient');
+        }
+    });
+});
+
+// Handle header style changes
+document.getElementById('header_style').addEventListener('change', function() {
+    updateHeaderStyle(this.value);
+});
+
+function updateHeaderStyle(style) {
+    const headers = document.querySelectorAll('.card-header, #sidebar .sidebar-header');
+    headers.forEach(header => {
+        if (style === 'gradient') {
+            header.style.background = `linear-gradient(to right, ${root.style.getPropertyValue('--primary-color') || '{{ theme_primary_color }}'}, ${root.style.getPropertyValue('--secondary-color') || '{{ theme_secondary_color }}'})`;
+        } else if (style === 'transparent') {
+            header.style.background = header.classList.contains('card-header') ? 'rgba(0, 0, 0, 0.03)' : 'rgba(255, 255, 255, 0.1)';
+        } else {
+            header.style.background = header.classList.contains('card-header') ? root.style.getPropertyValue('--primary-color') : root.style.getPropertyValue('--secondary-color');
+        }
+    });
+}
+
+// Handle border radius changes
+const borderRadiusInput = document.getElementById('border_radius');
+const borderRadiusValue = document.getElementById('border_radius_value');
+
+borderRadiusInput.addEventListener('input', function() {
+    const value = this.value + 'px';
+    borderRadiusValue.textContent = value;
+    root.style.setProperty('--border-radius', value);
+});
+
+// Handle font size changes
+document.getElementById('font_size').addEventListener('change', function() {
+    const sizes = {
+        'small': { base: '14px', heading: '1.5rem', input: '0.875rem' },
+        'medium': { base: '16px', heading: '1.75rem', input: '1rem' },
+        'large': { base: '18px', heading: '2rem', input: '1.125rem' }
+    };
+    
+    const selected = sizes[this.value];
+    root.style.setProperty('--font-size-base', selected.base);
+    root.style.setProperty('--font-size-heading', selected.heading);
+    root.style.setProperty('--font-size-input', selected.input);
+});
+</script>
+{% endblock %} 

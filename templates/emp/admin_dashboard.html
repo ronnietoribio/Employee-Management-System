@@ -1,0 +1,489 @@
+{% extends 'emp/base.html' %}
+
+{% block title %}Admin Dashboard - EMS{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="dashboard-header mb-4">
+        <div class="row align-items-center">
+            <div class="col">
+                <h1 class="h3 mb-0 text-dark">Welcome to Dashboard</h1>
+                <p class="text-muted mb-0">Here's what's happening with your employees today.</p>
+            </div>
+            <div class="col-auto">
+                <div class="current-date">
+                    <i class="fas fa-calendar-alt me-2"></i>{{ now|date:"F d, Y" }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <!-- Total Employees -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="stat-card bg-gradient-blue">
+                <div class="stat-card-inner">
+                    <div class="stat-icon-wrapper bg-blue-light">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 class="stat-value">{{ total_employees }}</h3>
+                        <p class="stat-label">Total Employees</p>
+                    </div>
+                </div>
+                <div class="stat-footer">
+                    <span class="trend-indicator">
+                        <i class="fas fa-chart-line"></i> Overall
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Employees -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="stat-card bg-gradient-green">
+                <div class="stat-card-inner">
+                    <div class="stat-icon-wrapper bg-green-light">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 class="stat-value">{{ active_employees }}</h3>
+                        <p class="stat-label">Active Employees</p>
+                    </div>
+                </div>
+                <div class="stat-footer">
+                    <span class="trend-indicator">
+                        <i class="fas fa-clock"></i> Currently Active
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Departments -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="stat-card bg-gradient-orange">
+                <div class="stat-card-inner">
+                    <div class="stat-icon-wrapper bg-orange-light">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 class="stat-value">{{ total_departments }}</h3>
+                        <p class="stat-label">Departments</p>
+                    </div>
+                </div>
+                <div class="stat-footer">
+                    <span class="trend-indicator">
+                        <i class="fas fa-layer-group"></i> Total Divisions
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Updates -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="stat-card bg-gradient-purple">
+                <div class="stat-card-inner">
+                    <div class="stat-icon-wrapper bg-purple-light">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 class="stat-value">{{ recent_updates }}</h3>
+                        <p class="stat-label">Recent Updates</p>
+                    </div>
+                </div>
+                <div class="stat-footer">
+                    <span class="trend-indicator">
+                        <i class="fas fa-history"></i> Last 30 Days
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Employees Table -->
+    <div class="card border-0 shadow-sm overflow-hidden dashboard-table">
+        <div class="card-header bg-white py-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h5 class="card-title mb-0 text-dark">Recently Modified Employees</h5>
+                    <p class="text-muted small mb-0">Latest updates and changes</p>
+                </div>
+                <a href="/emp/home/" class="btn btn-primary btn-sm">
+                    View All <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+            
+            <!-- Search and Filter Section -->
+            <div class="row g-3 mt-2">
+                <div class="col-md-4">
+                    <div class="search-box">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="dashboardSearch" class="form-control form-control-sm" placeholder="Search employees...">
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="d-flex gap-2">
+                        <select id="dashboardDepartmentFilter" class="form-select form-select-sm">
+                            <option value="">All Departments</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept }}">{{ dept }}</option>
+                            {% endfor %}
+                        </select>
+                        <select id="dashboardStatusFilter" class="form-select form-select-sm">
+                            <option value="">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="dashboardEmployeeTable">
+                    <thead>
+                        <tr>
+                            <th class="px-4">Employee</th>
+                            <th>ID</th>
+                            <th>Department</th>
+                            <th>Status</th>
+                            <th>Last Modified</th>
+                            <th class="text-end px-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for emp in recent_employees %}
+                        <tr>
+                            <td class="px-4">
+                                <div class="d-flex align-items-center">
+                                    <div class="profile-pic-small">
+                                        <img src="{% if emp.profile_pic %}{{ emp.profile_pic.url }}{% else %}/media/profile_pics/default.png{% endif %}" 
+                                             class="rounded-circle" alt="{{ emp.name }}'s profile">
+                                    </div>
+                                    <div class="ms-3">
+                                        <h6 class="mb-0">{{ emp.name }}</h6>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ emp.emp_id }}</td>
+                            <td>
+                                <span class="department-badge">{{ emp.department }}</span>
+                            </td>
+                            <td>
+                                {% if emp.working %}
+                                <span class="status-badge active">
+                                    <i class="fas fa-circle"></i> Active
+                                </span>
+                                {% else %}
+                                <span class="status-badge inactive">
+                                    <i class="fas fa-circle"></i> Inactive
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center text-muted">
+                                    <i class="fas fa-clock me-2"></i>
+                                    {{ emp.last_modified|date:"M d, Y H:i" }}
+                                </div>
+                            </td>
+                            <td class="text-end px-4">
+                                <div class="action-buttons">
+                                    <a href="/emp/update-emp/{{emp.id}}" class="btn btn-light btn-sm" data-bs-toggle="tooltip" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button onclick="confirmDelete('{{emp.name}}', '{{emp.id}}')" class="btn btn-light btn-sm ms-1" data-bs-toggle="tooltip" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Profile Picture */
+    .profile-pic-small {
+        width: 35px;
+        height: 35px;
+        overflow: hidden;
+        border-radius: 50%;
+        border: 1px solid var(--primary-color);
+    }
+
+    .profile-pic-small img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    /* Dashboard Header */
+    .dashboard-header {
+        background: #fff;
+        padding: 1.5rem;
+        border-radius: var(--border-radius);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+    }
+
+    .current-date {
+        background: var(--primary-color);
+        color: #fff;
+        padding: 0.5rem 1rem;
+        border-radius: var(--border-radius);
+        font-weight: 500;
+    }
+
+    /* Stat Cards */
+    .stat-card {
+        background: #fff;
+        border-radius: var(--border-radius);
+        overflow: hidden;
+        height: 100%;
+        position: relative;
+        transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .stat-card-inner {
+        padding: 1.5rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .stat-icon-wrapper {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .stat-content {
+        color: #fff;
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 600;
+        margin: 0;
+        line-height: 1.2;
+    }
+
+    .stat-label {
+        margin: 0;
+        opacity: 0.9;
+        font-size: 0.875rem;
+    }
+
+    .stat-footer {
+        padding: 0.75rem 1.5rem;
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+        font-size: 0.875rem;
+    }
+
+    .trend-indicator {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* Gradients and Colors */
+    .bg-gradient-blue {
+        background: linear-gradient(45deg, #2196F3, #4CAF50);
+    }
+
+    .bg-gradient-green {
+        background: linear-gradient(45deg, #4CAF50, #8BC34A);
+    }
+
+    .bg-gradient-orange {
+        background: linear-gradient(45deg, #FF9800, #FF5722);
+    }
+
+    .bg-gradient-purple {
+        background: linear-gradient(45deg, #9C27B0, #E91E63);
+    }
+
+    .bg-blue-light { background: rgba(255, 255, 255, 0.2); }
+    .bg-green-light { background: rgba(255, 255, 255, 0.2); }
+    .bg-orange-light { background: rgba(255, 255, 255, 0.2); }
+    .bg-purple-light { background: rgba(255, 255, 255, 0.2); }
+
+    /* Table Styles */
+    .dashboard-table {
+        background: #fff;
+        border-radius: var(--border-radius);
+    }
+
+    .avatar-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: var(--primary-color);
+        background: var(--primary-color);
+        color: #fff;
+    }
+
+    .department-badge {
+        background: rgba(var(--primary-rgb), 0.1);
+        color: var(--primary-color);
+        padding: 0.25rem 0.75rem;
+        border-radius: 50px;
+        font-size: 0.875rem;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 50px;
+        font-size: 0.875rem;
+    }
+
+    .status-badge.active {
+        background: rgba(76, 175, 80, 0.1);
+        color: #4CAF50;
+    }
+
+    .status-badge.inactive {
+        background: rgba(244, 67, 54, 0.1);
+        color: #F44336;
+    }
+
+    .status-badge i {
+        font-size: 0.625rem;
+    }
+
+    .action-buttons .btn {
+        padding: 0.375rem;
+        line-height: 1;
+        border: 1px solid #dee2e6;
+    }
+
+    .action-buttons .btn:hover {
+        background: var(--primary-color);
+        border-color: var(--primary-color);
+        color: #fff;
+    }
+
+    /* Table Header */
+    .table thead th {
+        background: #f8f9fa;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+        padding: 1rem;
+        border-top: none;
+    }
+
+    /* Table Body */
+    .table tbody td {
+        padding: 1rem;
+        vertical-align: middle;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .stat-card {
+            margin-bottom: 1rem;
+        }
+        
+        .table-responsive {
+            border: 0;
+        }
+    }
+
+    /* Search and Filter Styles */
+    .search-box {
+        position: relative;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+
+    #dashboardSearch {
+        padding-left: 30px;
+    }
+
+    .form-select {
+        min-width: 130px;
+    }
+</style>
+
+{% block extra_js %}
+<script>
+function confirmDelete(name, id) {
+    if (confirm(`Are you sure you want to delete employee "${name}"?\nThis action cannot be undone.`)) {
+        window.location.href = `/emp/delete-emp/${id}`;
+    }
+}
+
+// Dashboard Search and Filter Functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('dashboardSearch');
+    const departmentFilter = document.getElementById('dashboardDepartmentFilter');
+    const statusFilter = document.getElementById('dashboardStatusFilter');
+    const table = document.getElementById('dashboardEmployeeTable');
+    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+    function filterDashboardTable() {
+        const searchText = searchInput.value.toLowerCase();
+        const department = departmentFilter.value.toLowerCase();
+        const status = statusFilter.value.toLowerCase();
+
+        for (let row of rows) {
+            const nameCell = row.querySelector('h6');
+            const name = nameCell ? nameCell.textContent.toLowerCase() : '';
+            const rowDepartment = row.querySelector('.department-badge').textContent.toLowerCase();
+            const rowStatus = row.querySelector('.status-badge').textContent.toLowerCase();
+
+            const matchesSearch = name.includes(searchText);
+            const matchesDepartment = department === '' || rowDepartment === department;
+            const matchesStatus = status === '' || rowStatus.includes(status);
+
+            row.style.display = (matchesSearch && matchesDepartment && matchesStatus) ? '' : 'none';
+        }
+    }
+
+    // Add event listeners
+    searchInput.addEventListener('input', filterDashboardTable);
+    departmentFilter.addEventListener('change', filterDashboardTable);
+    statusFilter.addEventListener('change', filterDashboardTable);
+});
+
+// Initialize tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}
