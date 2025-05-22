@@ -30,6 +30,8 @@ A modern, responsive Employee Management System built with Django, featuring a b
 
 ### ⚙️ System Features
 - Secure authentication system with session management
+- User registration with email validation
+- Modern navigation interface with active state indicators
 - Role-based access control for different user levels
 - Configurable system settings through admin panel
 - Comprehensive audit trail for all changes
@@ -46,11 +48,21 @@ A modern, responsive Employee Management System built with Django, featuring a b
 - Recent activity monitoring
 - Performance metrics visualization
 
+### 🔐 Authentication Features
+- Modern login interface with navigation bar
+- User registration system with validation
+- Compact and user-friendly registration form
+- Active state indicators in navigation
+- Secure password management
+- Session handling and user tracking
+
 ## 🚀 Getting Started
 
 ### Prerequisites
 - Python 3.8 or higher
 - pip (Python package manager)
+- MySQL 8.0 or higher
+- MySQL service running on localhost:3306
 - Virtual environment (recommended)
 - Web browser (Chrome/Firefox/Safari)
 
@@ -84,20 +96,36 @@ pip install -r requirements.txt
 SECRET_KEY=your_secret_key
 DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1
+
+# Database settings
+DB_NAME=emp
+DB_USER=root
+DB_PASSWORD=your_mysql_password
+DB_HOST=localhost
+DB_PORT=3306
 ```
 
-5. Run migrations
+5. Create MySQL database
+```bash
+# Log into MySQL as root
+mysql -u root -p
+
+# Create the database
+CREATE DATABASE emp;
+```
+
+6. Run migrations
 ```bash
 python manage.py makemigrations
 python manage.py migrate
 ```
 
-6. Create superuser
+7. Create superuser
 ```bash
 python manage.py createsuperuser
 ```
 
-7. Run the development server
+8. Run the development server
 ```bash
 python manage.py runserver
 ```
@@ -133,7 +161,7 @@ Visit `http://127.0.0.1:8000` in your browser and login with your superuser cred
 ### Backend
 - Django 4.0.4 (Python Web Framework)
 - Python 3.8+ (Programming Language)
-- SQLite/PostgreSQL (Database)
+- MySQL 8.0 (Primary Database)
 
 ### Frontend
 - HTML5 (Structure)
