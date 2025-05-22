@@ -10,8 +10,92 @@ from django.contrib.auth.decorators import login_required
 from django.utils.crypto import get_random_string
 from django.views.decorators.cache import never_cache
 from django.utils.cache import patch_response_headers
+from django.core.cache import cache
+from django.core.exceptions import ValidationError
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth.models import User
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.urls import reverse
 
+def rate_limit_login(view_func):
+    def wrapper(request, *args, **kwargs):
+        if request.method == 'POST':
+            ip = request.META.get('REMOTE_ADDR')
+            key = f'login_attempts_{ip}'
+            attempts = cache.get(key, 0)
+            
+            if attempts >= 5:  # 5 attempts max
+                messages.error(request, 'Too many login attempts. Please try again in 5 minutes.')
+                return redirect('login')
+                
+            cache.set(key, attempts + 1, 300)  # 5 minutes timeout
+        return view_func(request, *args, **kwargs)
+    return wrapper
 
+def password_reset_request(request):
+    if request.method == "POST":
+        email = request.POST.get("email")
+        try:
+            user = User.objects.get(email=email)
+            # Generate password reset token
+            token = default_token_generator.make_token(user)
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            
+            # Build password reset link
+            reset_url = request.build_absolute_uri(
+                reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': token})
+            )
+            
+            # Send email
+            subject = "Password Reset Requested"
+            email_template_name = "emp/password_reset_email.html"
+            context = {
+                "email": user.email,
+                'reset_url': reset_url,
+                'user': user,
+            }
+            email_message = render_to_string(email_template_name, context)
+            
+            send_mail(subject, email_message, 'noreply@example.com', [user.email])
+            messages.success(request, 'Password reset link has been sent to your email.')
+            
+        except User.DoesNotExist:
+            messages.error(request, 'No user found with that email address.')
+        
+    return render(request, 'emp/password_reset.html')
+
+def password_reset_confirm(request, uidb64, token):
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+        
+        if default_token_generator.check_token(user, token):
+            if request.method == "POST":
+                new_password = request.POST.get("new_password")
+                confirm_password = request.POST.get("confirm_password")
+                
+                if new_password == confirm_password:
+                    user.set_password(new_password)
+                    user.save()
+                    messages.success(request, 'Password has been reset successfully.')
+                    return redirect('login')
+                else:
+                    messages.error(request, 'Passwords do not match.')
+            
+            return render(request, 'emp/password_reset_confirm.html')
+        else:
+            messages.error(request, 'Password reset link is invalid or has expired.')
+            
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        messages.error(request, 'Invalid password reset link.')
+    
+    return redirect('login')
+
+# Apply rate limiting to login view
+@rate_limit_login
 @never_cache
 def login_view(request):
     # Prevent caching of the login page
@@ -24,6 +108,8 @@ def login_view(request):
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
+        remember_me = request.POST.get('remember-me') == 'on'
+        
         user = authenticate(request, username=username, password=password)
         
         if user is not None:
@@ -35,8 +121,13 @@ def login_view(request):
             request.session['is_authenticated'] = True
             request.session['session_key'] = get_random_string(32)
             
-            # Set session expiry to 12 hours
-            request.session.set_expiry(43200)
+            # Set session expiry based on remember me
+            if remember_me:
+                # Set session to expire in 30 days
+                request.session.set_expiry(30 * 24 * 60 * 60)
+            else:
+                # Set session to expire in 12 hours
+                request.session.set_expiry(43200)
             
             messages.success(request, f'Welcome back, {user.username}!')
             return redirect('admin_dashboard')
@@ -283,3 +374,40 @@ def settings_view(request):
         'settings': settings_instance,
         'departments': settings_instance.get_department_list(),
     })
+
+def register_view(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        password1 = request.POST.get('password1')
+        password2 = request.POST.get('password2')
+        terms = request.POST.get('terms')
+
+        # Validation
+        if password1 != password2:
+            messages.error(request, 'Passwords do not match!')
+            return redirect('register')
+        
+        if User.objects.filter(username=username).exists():
+            messages.error(request, 'Username already exists!')
+            return redirect('register')
+        
+        if User.objects.filter(email=email).exists():
+            messages.error(request, 'Email already registered!')
+            return redirect('register')
+        
+        if not terms:
+            messages.error(request, 'Please agree to the terms and conditions!')
+            return redirect('register')
+
+        # Create user
+        try:
+            user = User.objects.create_user(username=username, email=email, password=password1)
+            user.save()
+            messages.success(request, 'Registration successful! Please login.')
+            return redirect('login')
+        except Exception as e:
+            messages.error(request, f'Error creating account: {str(e)}')
+            return redirect('register')
+
+    return render(request, 'emp/register.html')
