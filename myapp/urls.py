@@ -22,11 +22,11 @@ import emp.views as fun
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path("",fun.emp_home),
-    path("index/",fun.emp_home),
+    path("", fun.login_view, name='login'),
+    path("index/", fun.login_view, name='login'),
     # path("about/",about),
     # path("services/",services),
-    path("emp/",include('emp.urls'))
+    path("emp/", include('emp.urls'))
 ]
 
 # Serve media files during development

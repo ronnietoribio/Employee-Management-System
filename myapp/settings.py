@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 import os
 from pathlib import Path
 
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -21,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-_u01hgzoj^iru*wtjdf0^r%5pq=mf21b5a*nq5^v8elt7ker!!'
+SECRET_KEY = os.getenv('SECRET_KEY', 'your-default-secret-key-for-development')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -76,22 +75,14 @@ WSGI_APPLICATION = 'myapp.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        # 'NAME': BASE_DIR / 'db.sqlite3',
-        'NAME': 'emp', # add you database name (schema name eg: newemp)
+        'NAME': 'emp',
         'USER': 'root',
-        'PASSWORD': '',
-        'HOST': 'localhost',
-        'PORT': '3306'
+        'PASSWORD': 'newpassword',
+        'HOST': '127.0.0.1',  # Using IP instead of localhost
+        'PORT': '3307'
     }
 }
 
