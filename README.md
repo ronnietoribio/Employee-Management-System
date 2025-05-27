@@ -148,8 +148,8 @@ Visit `http://127.0.0.1:8000` in your browser and login with your superuser cred
 
 ### Other Features
 ![Dashboard](screenshots/dashboard-section.jpg)
-![Login Page](screenshots/login-form.jpg)
-![Logout](screenshots/logout.jpg)
+![Login Page](screenshots/updated-login-form.jpg)
+![Logout](screenshots/updated-logout.jpg)
 ![Register](screenshots/register.jpg)
 ### Settings Panel
 ![Settings](screenshots/settings.jpg)
