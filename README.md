@@ -148,8 +148,11 @@ Visit `http://127.0.0.1:8000` in your browser and login with your superuser cred
 
 ### Other Features
 ![Dashboard](screenshots/dashboard-section.jpg)
+### The Default Page when running the project |Login Page|
 ![Login Page](screenshots/updated-login-form.jpg)
+### Logout
 ![Logout](screenshots/updated-logout.jpg)
+### Registration Form
 ![Register](screenshots/register.jpg)
 ### Settings Panel
 ![Settings](screenshots/settings.jpg)
