@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 import os
 from pathlib import Path
 
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -20,7 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY', 'your-default-secret-key-for-development')
+SECRET_KEY = 'django-insecure-_u01hgzoj^iru*wtjdf0^r%5pq=mf21b5a*nq5^v8elt7ker!!'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -75,14 +76,21 @@ WSGI_APPLICATION = 'myapp.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'emp',
         'USER': 'root',
-        'PASSWORD': 'newpassword',
+        'PASSWORD': 'newpassword',  # Your MySQL root password
         'HOST': '127.0.0.1',  # Using IP instead of localhost
-        'PORT': '3307'
+        'PORT': '3307'  # Using the specified port
     }
 }
 
@@ -96,6 +104,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 8,
+        }
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
@@ -132,16 +143,29 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 STATICFILES_DIRS = os.path.join(BASE_DIR,'static'),
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles_build', 'static')
 
+# Email Configuration - Development Only (prints to console)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# Password Reset Settings
+PASSWORD_RESET_TIMEOUT = 86400  # 24 hours in seconds
+
 # Session Settings
-SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Store sessions in the database
-SESSION_COOKIE_AGE = 43200  # 12 hours in seconds
-SESSION_COOKIE_SECURE = True  # Only send cookie over HTTPS
-SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access to session cookie
-SESSION_COOKIE_SAMESITE = 'Lax'  # CSRF protection
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Expire session when browser closes
-SESSION_SAVE_EVERY_REQUEST = True  # Update session on every request
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds (for remember me)
+SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_SAVE_EVERY_REQUEST = True
 
 # Media files (Uploaded files)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Cache settings for rate limiting
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    }
+}
 
